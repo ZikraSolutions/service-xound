@@ -34,6 +34,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/events/share/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                // Búsqueda de acordes en lacuerda.net (usuarios autenticados)
+                .requestMatchers(HttpMethod.GET, "/api/chords/**").authenticated()
                 // Eventos publicados accesibles para músicos autenticados
                 .requestMatchers(HttpMethod.GET, "/api/events/published").authenticated()
                 // CRUD de eventos y canciones solo para ADMIN

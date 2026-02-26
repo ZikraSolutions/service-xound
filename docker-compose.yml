@@ -1,0 +1,9 @@
+services:
+  xound-api:
+    build: .
+    container_name: xound-api
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    restart: unless-stopped

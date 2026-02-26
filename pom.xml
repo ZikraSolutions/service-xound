@@ -81,6 +81,13 @@
             <version>2.7.0</version>
         </dependency>
 
+        <!-- JSoup - Web scraping para lacuerda.net -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.18.1</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
