@@ -43,4 +43,14 @@ public class UserController {
     public ResponseEntity<List<User>> findAll() {
         return ResponseEntity.ok(userService.findAll());
     }
+
+    @PutMapping("/{id}/role")
+    public ResponseEntity<?> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            User updated = userService.changeRole(id, body.get("roleName"));
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

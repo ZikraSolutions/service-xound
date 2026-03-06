@@ -19,6 +19,7 @@ public class SongRepository {
             rs.getString("artist"),
             rs.getString("tone"),
             rs.getString("content"),
+            rs.getString("lyrics"),
             rs.getString("notes"),
             rs.getLong("user_id"),
             rs.getBoolean("status"),
@@ -44,17 +45,17 @@ public class SongRepository {
     }
 
     public int save(Song song) {
-        String sql = "INSERT INTO songs (title, artist, tone, content, notes, user_id) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO songs (title, artist, tone, content, lyrics, notes, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
         return jdbcTemplate.update(sql,
                 song.getTitle(), song.getArtist(), song.getTone(),
-                song.getContent(), song.getNotes(), song.getUserId());
+                song.getContent(), song.getLyrics(), song.getNotes(), song.getUserId());
     }
 
     public int update(Song song) {
-        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, notes = ? WHERE id = ?";
+        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, lyrics = ?, notes = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
                 song.getTitle(), song.getArtist(), song.getTone(),
-                song.getContent(), song.getNotes(), song.getId());
+                song.getContent(), song.getLyrics(), song.getNotes(), song.getId());
     }
 
     public int changeStatus(Long id, boolean status) {

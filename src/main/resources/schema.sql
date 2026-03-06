@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS songs (
     artist VARCHAR(200),
     tone VARCHAR(10),
     content TEXT,
+    lyrics TEXT,
     notes TEXT,
     user_id INT NOT NULL,
     status BOOLEAN NOT NULL DEFAULT TRUE,

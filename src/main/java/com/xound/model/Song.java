@@ -15,6 +15,7 @@ public class Song {
     private String artist;
     private String tone;
     private String content;
+    private String lyrics;
     private String notes;
     private Long userId;
     private Boolean status;

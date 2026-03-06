@@ -66,4 +66,8 @@ public class UserRepository {
     public int changeStatus(Long id, boolean status) {
         return jdbcTemplate.update("UPDATE users SET status = ? WHERE id = ?", status, id);
     }
+
+    public int updateRole(Long userId, Long roleId) {
+        return jdbcTemplate.update("UPDATE users SET role_id = ? WHERE id = ?", roleId, userId);
+    }
 }

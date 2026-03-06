@@ -36,11 +36,9 @@ public class UserService {
             throw new RuntimeException("El email ya está registrado");
         }
 
-        if (user.getRoleId() == null) {
-            // Por defecto asignar rol MUSICIAN
-            roleRepository.findByName("MUSICIAN")
-                    .ifPresent(role -> user.setRoleId(role.getId()));
-        }
+        // Siempre asignar MUSICIAN al registrarse, ignorando lo que envíe el cliente
+        roleRepository.findByName("MUSICIAN")
+                .ifPresent(role -> user.setRoleId(role.getId()));
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
@@ -54,6 +52,20 @@ public class UserService {
         response.put("token", token);
         response.put("user", saved);
         return response;
+    }
+
+    public User changeRole(Long userId, String roleName) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        Long roleId = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Rol no válido: " + roleName))
+                .getId();
+
+        userRepository.updateRole(userId, roleId);
+
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Error al obtener usuario actualizado"));
     }
 
     public Map<String, Object> login(String email, String password) {
