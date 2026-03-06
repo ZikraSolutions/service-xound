@@ -16,6 +16,7 @@ public class UserRepository {
     private final RowMapper<User> rowMapper = (rs, rowNum) -> {
         User user = new User();
         user.setId(rs.getLong("id"));
+        user.setName(rs.getString("name"));
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password"));
         user.setRoleId(rs.getLong("role_id"));
@@ -52,8 +53,8 @@ public class UserRepository {
     }
 
     public int save(User user) {
-        String sql = "INSERT INTO users (username, password, role_id) VALUES (?, ?, ?)";
-        return jdbcTemplate.update(sql, user.getUsername(), user.getPassword(), user.getRoleId());
+        String sql = "INSERT INTO users (name, username, password, role_id) VALUES (?, ?, ?, ?)";
+        return jdbcTemplate.update(sql, user.getName(), user.getUsername(), user.getPassword(), user.getRoleId());
     }
 
     public int update(User user) {
