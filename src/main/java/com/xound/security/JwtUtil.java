@@ -22,9 +22,9 @@ public class JwtUtil {
         this.expiration = expiration;
     }
 
-    public String generateToken(Long userId, String email, String role) {
+    public String generateToken(Long userId, String username, String role) {
         return Jwts.builder()
-                .subject(email)
+                .subject(username)
                 .claim("userId", userId)
                 .claim("role", role)
                 .issuedAt(new Date())
@@ -41,7 +41,7 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public String extractEmail(String token) {
+    public String extractUsername(String token) {
         return extractClaims(token).getSubject();
     }
 

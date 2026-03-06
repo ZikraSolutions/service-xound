@@ -32,7 +32,7 @@ public class UserController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
             Map<String, Object> response = userService.login(
-                    credentials.get("email"), credentials.get("password"));
+                    credentials.get("username"), credentials.get("password"));
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
