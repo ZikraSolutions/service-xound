@@ -6,66 +6,73 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ChordSearchService {
 
-    private static final String BASE_URL = "https://www.guitartabs.cc";
-    private static final String SEARCH_URL = BASE_URL + "/search.php?tabtype=chords&band=%s&song=%s";
-    private static final String ALLOWED_HOST = "guitartabs.cc";
+    private static final String BASE_URL = "https://www.cifraclub.com.br";
+    private static final String SOLR_URL = "https://solr.sscdn.co/cc/search";
+    private static final String ALLOWED_HOST = "cifraclub.com.br";
+
+    private final RestClient restClient;
+
+    public ChordSearchService() {
+        this.restClient = RestClient.builder()
+                .baseUrl(SOLR_URL)
+                .defaultHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .build();
+    }
 
     /**
-     * Busca canciones con acordes en guitartabs.cc y retorna lista de resultados.
-     * El query se separa en artista y cancion para una busqueda mas precisa.
+     * Busca canciones con acordes en Cifra Club usando su API de Solr.
      */
     public List<ChordSearchResult> search(String query) {
         List<ChordSearchResult> results = new ArrayList<>();
 
         try {
-            // Separar query en partes para band y song
-            String[] parts = query.trim().split("\\s+", 2);
-            String band = URLEncoder.encode(parts[0], StandardCharsets.UTF_8);
-            String song = parts.length > 1 ? URLEncoder.encode(parts[1], StandardCharsets.UTF_8) : "";
+            String encoded = URLEncoder.encode(query, StandardCharsets.UTF_8);
+            String jsonp = restClient.get()
+                    .uri("?q={query}&rows=15", query.trim())
+                    .retrieve()
+                    .body(String.class);
 
-            String searchUrl = String.format(SEARCH_URL, band, song);
+            // El response es JSONP: suggest_callback({...})
+            if (jsonp == null || !jsonp.contains("{")) return results;
+            String json = jsonp.substring(jsonp.indexOf("{"), jsonp.lastIndexOf("}") + 1);
 
-            Document doc = Jsoup.connect(searchUrl)
-                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .timeout(10_000)
-                    .get();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsed = new com.fasterxml.jackson.databind.ObjectMapper().readValue(json, Map.class);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = (Map<String, Object>) parsed.get("response");
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> docs = (List<Map<String, Object>>) response.get("docs");
 
-            // guitartabs.cc muestra resultados con links a /tabs/
-            Elements links = doc.select("a[href*=/tabs/]");
+            for (Map<String, Object> doc : docs) {
+                String type = (String) doc.get("t");
+                // t=2 son canciones, t=1 son artistas
+                if (!"2".equals(type)) continue;
 
-            String lastArtist = "";
-            for (Element link : links) {
-                String href = link.attr("href");
-                String fullUrl = href.startsWith("http") ? href : BASE_URL + href;
+                String title = (String) doc.get("txt");
+                String artist = (String) doc.get("art");
+                String artistDns = (String) doc.get("dns");
+                String songUrl = (String) doc.get("url");
 
-                // Los links de artista son como /tabs/q/queen/
-                // Los links de canciones son como /tabs/q/queen/bohemian_rhapsody_crd.html
-                if (href.endsWith("/")) {
-                    // Es un link de artista, guardar el nombre
-                    lastArtist = link.text().trim();
-                    continue;
-                }
+                if (title == null || artistDns == null || songUrl == null) continue;
 
-                // Solo incluir links que contengan _crd (chords)
-                if (!href.contains("_crd")) continue;
-                if (!fullUrl.contains(ALLOWED_HOST)) continue;
+                String fullUrl = BASE_URL + "/" + artistDns + "/" + songUrl + "/";
+                results.add(new ChordSearchResult(title, artist != null ? artist : "", fullUrl, null));
 
-                String title = link.text().trim();
-                results.add(new ChordSearchResult(title, lastArtist, fullUrl, null));
-
-                if (results.size() >= 20) break;
+                if (results.size() >= 15) break;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Error al buscar acordes: " + e.getMessage(), e);
         }
 
@@ -73,8 +80,8 @@ public class ChordSearchService {
     }
 
     /**
-     * Descarga el contenido de acordes de una URL especifica de guitartabs.cc.
-     * Solo acepta URLs del dominio guitartabs.cc para evitar SSRF.
+     * Descarga el contenido de acordes de una URL de Cifra Club.
+     * Solo acepta URLs del dominio cifraclub.com.br para evitar SSRF.
      */
     public ChordSearchResult fetchChords(String url) {
         validateUrl(url);
@@ -82,53 +89,39 @@ public class ChordSearchService {
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .timeout(10_000)
+                    .timeout(15_000)
                     .get();
 
-            // Titulo de la pagina
-            String pageTitle = doc.title();
-            String title = pageTitle;
+            // Titulo
+            String title = doc.title().replace(" - Cifra Club", "").trim();
             String artist = "";
 
-            // Extraer titulo del h3.content_h
-            Element titleEl = doc.selectFirst("h3.content_h");
-            if (titleEl != null) {
-                title = titleEl.text().trim();
+            // Extraer artista del titulo "Cancion - Artista - Cifra Club"
+            Element h1 = doc.selectFirst("h1");
+            if (h1 != null) {
+                title = h1.text().trim();
+            }
+            Element artistEl = doc.selectFirst("h2 a, .cifra-composer a, a[href*='/']");
+            if (artistEl != null && artistEl.text().length() < 100) {
+                artist = artistEl.text().trim();
             }
 
-            // Extraer el contenido de acordes del segundo <pre> (el primero es el titulo)
+            // Acordes en <pre>
             String chords = "";
-            Elements preElements = doc.select("pre");
-
-            for (Element pre : preElements) {
-                String text = pre.wholeText().trim();
-                // El pre con contenido real tiene mas de unas pocas lineas
-                if (text.length() > 50 && !text.contains("<h3")) {
-                    // Limpiar tags HTML residuales del texto
-                    chords = Jsoup.parse(pre.html()).wholeText().trim();
-                    break;
-                }
-            }
-
-            // Si no encontramos en pre, buscar en .tabcont
-            if (chords.isEmpty()) {
-                Element tabcont = doc.selectFirst(".tabcont");
-                if (tabcont != null) {
-                    Element prInTab = tabcont.selectFirst("pre");
-                    if (prInTab != null) {
-                        chords = Jsoup.parse(prInTab.html()).wholeText().trim();
-                    }
-                }
-            }
-
-            // Extraer artista del contenido si aparece "Artist: ..."
-            if (!chords.isEmpty()) {
-                for (String line : chords.split("\n")) {
-                    if (line.trim().toLowerCase().startsWith("artist:")) {
-                        artist = line.substring(line.indexOf(":") + 1).trim();
-                        break;
-                    }
-                }
+            Element pre = doc.selectFirst("pre");
+            if (pre != null) {
+                // Reemplazar <b> tags con el texto del acorde (mantener formato)
+                chords = pre.html()
+                        .replaceAll("<b>", "")
+                        .replaceAll("</b>", "")
+                        .replaceAll("<a[^>]*>", "")
+                        .replaceAll("</a>", "")
+                        .replaceAll("<[^>]+>", "")
+                        .replaceAll("&amp;", "&")
+                        .replaceAll("&lt;", "<")
+                        .replaceAll("&gt;", ">")
+                        .replaceAll("&nbsp;", " ")
+                        .trim();
             }
 
             return new ChordSearchResult(title, artist, url, chords);
