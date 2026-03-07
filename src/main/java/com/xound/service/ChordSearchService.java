@@ -16,70 +16,65 @@ import java.util.List;
 @Service
 public class ChordSearchService {
 
-    private static final String BASE_URL = "https://www.lacuerda.net";
-    private static final String SEARCH_URL = BASE_URL + "/buscar/?q=";
-    private static final String ALLOWED_HOST = "www.lacuerda.net";
+    private static final String BASE_URL = "https://www.guitartabs.cc";
+    private static final String SEARCH_URL = BASE_URL + "/search.php?tabtype=chords&band=%s&song=%s";
+    private static final String ALLOWED_HOST = "guitartabs.cc";
 
     /**
-     * Busca canciones en lacuerda.net y retorna lista de resultados con título, artista y URL.
+     * Busca canciones con acordes en guitartabs.cc y retorna lista de resultados.
+     * El query se separa en artista y cancion para una busqueda mas precisa.
      */
     public List<ChordSearchResult> search(String query) {
         List<ChordSearchResult> results = new ArrayList<>();
 
         try {
-            String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            Document doc = Jsoup.connect(SEARCH_URL + encodedQuery)
+            // Separar query en partes para band y song
+            String[] parts = query.trim().split("\\s+", 2);
+            String band = URLEncoder.encode(parts[0], StandardCharsets.UTF_8);
+            String song = parts.length > 1 ? URLEncoder.encode(parts[1], StandardCharsets.UTF_8) : "";
+
+            String searchUrl = String.format(SEARCH_URL, band, song);
+
+            Document doc = Jsoup.connect(searchUrl)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                     .timeout(10_000)
                     .get();
 
-            // lacuerda.net muestra resultados en elementos <li> dentro de .resultados
-            Elements items = doc.select(".resultados li, .result-list li, ul.canciones li");
+            // guitartabs.cc muestra resultados con links a /tabs/
+            Elements links = doc.select("a[href*=/tabs/]");
 
-            if (items.isEmpty()) {
-                // Fallback: buscar cualquier link que apunte a una canción dentro del sitio
-                items = doc.select("a[href*='/acordes/'], a[href*='/tabs/'], a[href*='/canciones/']")
-                        .parents().stream()
-                        .reduce(new Elements(), (acc, el) -> { acc.add(el); return acc; }, (a, b) -> a);
-            }
-
-            for (Element item : items) {
-                Element link = item.selectFirst("a[href]");
-                if (link == null) continue;
-
+            String lastArtist = "";
+            for (Element link : links) {
                 String href = link.attr("href");
                 String fullUrl = href.startsWith("http") ? href : BASE_URL + href;
-                String text = item.text();
 
-                // Intenta separar "Artista - Título" o "Título por Artista"
-                String title = link.text().trim();
-                String artist = "";
-
-                Element artistEl = item.selectFirst(".artista, .artist, span.por");
-                if (artistEl != null) {
-                    artist = artistEl.text().trim();
-                } else if (text.contains(" - ")) {
-                    String[] parts = text.split(" - ", 2);
-                    artist = parts[0].trim();
-                    title = parts[1].trim();
+                // Los links de artista son como /tabs/q/queen/
+                // Los links de canciones son como /tabs/q/queen/bohemian_rhapsody_crd.html
+                if (href.endsWith("/")) {
+                    // Es un link de artista, guardar el nombre
+                    lastArtist = link.text().trim();
+                    continue;
                 }
 
+                // Solo incluir links que contengan _crd (chords)
+                if (!href.contains("_crd")) continue;
                 if (!fullUrl.contains(ALLOWED_HOST)) continue;
 
-                results.add(new ChordSearchResult(title, artist, fullUrl, null));
+                String title = link.text().trim();
+                results.add(new ChordSearchResult(title, lastArtist, fullUrl, null));
 
                 if (results.size() >= 20) break;
             }
         } catch (IOException e) {
-            throw new RuntimeException("Error al buscar en lacuerda.net: " + e.getMessage(), e);
+            throw new RuntimeException("Error al buscar acordes: " + e.getMessage(), e);
         }
 
         return results;
     }
 
     /**
-     * Descarga el contenido de acordes de una URL específica de lacuerda.net.
-     * Solo acepta URLs del dominio lacuerda.net para evitar SSRF.
+     * Descarga el contenido de acordes de una URL especifica de guitartabs.cc.
+     * Solo acepta URLs del dominio guitartabs.cc para evitar SSRF.
      */
     public ChordSearchResult fetchChords(String url) {
         validateUrl(url);
@@ -90,26 +85,49 @@ public class ChordSearchService {
                     .timeout(10_000)
                     .get();
 
-            // Título y artista de la página
-            String title = extractMeta(doc, "og:title", doc.title());
-            String artist = extractMeta(doc, "og:description", "");
+            // Titulo de la pagina
+            String pageTitle = doc.title();
+            String title = pageTitle;
+            String artist = "";
 
-            // Contenido de acordes: buscar en los contenedores más comunes de lacuerda.net
-            String chords = "";
-
-            Element chordsEl = doc.selectFirst(
-                ".tablatura, .acordes, .tab-content, #tablatura, #acordes, pre.tab, pre"
-            );
-
-            if (chordsEl != null) {
-                chords = chordsEl.wholeText().trim();
+            // Extraer titulo del h3.content_h
+            Element titleEl = doc.selectFirst("h3.content_h");
+            if (titleEl != null) {
+                title = titleEl.text().trim();
             }
 
+            // Extraer el contenido de acordes del segundo <pre> (el primero es el titulo)
+            String chords = "";
+            Elements preElements = doc.select("pre");
+
+            for (Element pre : preElements) {
+                String text = pre.wholeText().trim();
+                // El pre con contenido real tiene mas de unas pocas lineas
+                if (text.length() > 50 && !text.contains("<h3")) {
+                    // Limpiar tags HTML residuales del texto
+                    chords = Jsoup.parse(pre.html()).wholeText().trim();
+                    break;
+                }
+            }
+
+            // Si no encontramos en pre, buscar en .tabcont
             if (chords.isEmpty()) {
-                // Fallback: extraer todo el texto del main content
-                Element main = doc.selectFirst("main, .contenido, #contenido, article");
-                if (main != null) {
-                    chords = main.wholeText().trim();
+                Element tabcont = doc.selectFirst(".tabcont");
+                if (tabcont != null) {
+                    Element prInTab = tabcont.selectFirst("pre");
+                    if (prInTab != null) {
+                        chords = Jsoup.parse(prInTab.html()).wholeText().trim();
+                    }
+                }
+            }
+
+            // Extraer artista del contenido si aparece "Artist: ..."
+            if (!chords.isEmpty()) {
+                for (String line : chords.split("\n")) {
+                    if (line.trim().toLowerCase().startsWith("artist:")) {
+                        artist = line.substring(line.indexOf(":") + 1).trim();
+                        break;
+                    }
                 }
             }
 
@@ -122,28 +140,19 @@ public class ChordSearchService {
 
     private void validateUrl(String url) {
         if (url == null || url.isBlank()) {
-            throw new IllegalArgumentException("La URL no puede estar vacía");
+            throw new IllegalArgumentException("La URL no puede estar vacia");
         }
         if (!url.startsWith("https://") && !url.startsWith("http://")) {
-            throw new IllegalArgumentException("URL inválida");
+            throw new IllegalArgumentException("URL invalida");
         }
         try {
             java.net.URI uri = java.net.URI.create(url);
             String host = uri.getHost();
-            if (host == null || !host.endsWith("lacuerda.net")) {
-                throw new IllegalArgumentException("Solo se permiten URLs de lacuerda.net");
+            if (host == null || !host.endsWith(ALLOWED_HOST)) {
+                throw new IllegalArgumentException("Solo se permiten URLs de " + ALLOWED_HOST);
             }
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("URL inválida: " + e.getMessage());
+            throw new IllegalArgumentException("URL invalida: " + e.getMessage());
         }
-    }
-
-    private String extractMeta(Document doc, String property, String defaultValue) {
-        Element meta = doc.selectFirst("meta[property=" + property + "], meta[name=" + property + "]");
-        if (meta != null) {
-            String content = meta.attr("content");
-            if (!content.isBlank()) return content.trim();
-        }
-        return defaultValue;
     }
 }
