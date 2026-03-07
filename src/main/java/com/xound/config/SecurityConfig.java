@@ -53,6 +53,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/*/setlist").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/events/*/setlist/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/events/*/setlist/**").hasRole("ADMIN")
+                // Band management - crear y gestionar banda solo ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/bands").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bands/regenerate-code").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bands/*/members/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/bands/*/members/*").hasRole("ADMIN")
+                // Join band - cualquier usuario autenticado
+                .requestMatchers(HttpMethod.POST, "/api/bands/join").authenticated()
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )
