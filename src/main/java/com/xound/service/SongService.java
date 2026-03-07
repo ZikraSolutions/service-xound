@@ -1,18 +1,22 @@
 package com.xound.service;
 
 import com.xound.model.Song;
+import com.xound.repository.HiddenSongRepository;
 import com.xound.repository.SongRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class SongService {
 
     private final SongRepository songRepository;
+    private final HiddenSongRepository hiddenSongRepository;
 
-    public SongService(SongRepository songRepository) {
+    public SongService(SongRepository songRepository, HiddenSongRepository hiddenSongRepository) {
         this.songRepository = songRepository;
+        this.hiddenSongRepository = hiddenSongRepository;
     }
 
     public List<Song> findAll() {
@@ -28,8 +32,23 @@ public class SongService {
         return songRepository.searchByTitle(title);
     }
 
-    public void save(Song song) {
+    public Song save(Song song) {
+        // Verificar si ya existe una canción con el mismo título y artista
+        Optional<Song> existing = songRepository.findByTitleAndArtist(
+                song.getTitle(), song.getArtist() != null ? song.getArtist() : "");
+
+        if (existing.isPresent()) {
+            Song found = existing.get();
+            // Si el usuario la tiene oculta, des-ocultarla
+            if (hiddenSongRepository.isHidden(found.getId(), song.getUserId())) {
+                hiddenSongRepository.remove(found.getId(), song.getUserId());
+                return found;
+            }
+            throw new RuntimeException("Ya existe una canción con ese título y artista");
+        }
+
         songRepository.save(song);
+        return song;
     }
 
     public void update(Long id, Song song) {

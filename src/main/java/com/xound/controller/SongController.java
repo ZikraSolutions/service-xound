@@ -43,7 +43,11 @@ public class SongController {
         try {
             Long userId = (Long) auth.getCredentials();
             song.setUserId(userId);
-            songService.save(song);
+            Song result = songService.save(song);
+            // Si la canción ya tenía ID, fue restaurada (des-ocultada)
+            if (result.getId() != null && result.getId() > 0 && song.getId() == null) {
+                return ResponseEntity.ok(Map.of("message", "La canción ya existía y fue restaurada"));
+            }
             return ResponseEntity.ok(Map.of("message", "Canción creada exitosamente"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

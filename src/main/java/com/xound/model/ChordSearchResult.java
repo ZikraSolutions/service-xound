@@ -12,4 +12,5 @@ public class ChordSearchResult {
     private String artist;
     private String url;
     private String chords; // null en búsqueda; poblado al hacer fetch
+    private String tone;   // tonalidad detectada del primer acorde
 }

@@ -24,4 +24,17 @@ public class HiddenSongRepository {
                 "INSERT INTO hidden_songs (song_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING",
                 songId, userId);
     }
+
+    public int remove(Long songId, Long userId) {
+        return jdbcTemplate.update(
+                "DELETE FROM hidden_songs WHERE song_id = ? AND user_id = ?",
+                songId, userId);
+    }
+
+    public boolean isHidden(Long songId, Long userId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM hidden_songs WHERE song_id = ? AND user_id = ?",
+                Integer.class, songId, userId);
+        return count != null && count > 0;
+    }
 }

@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ChordSearchService {
@@ -68,7 +70,7 @@ public class ChordSearchService {
                 if (title == null || artistDns == null || songUrl == null) continue;
 
                 String fullUrl = BASE_URL + "/" + artistDns + "/" + songUrl + "/";
-                results.add(new ChordSearchResult(title, artist != null ? artist : "", fullUrl, null));
+                results.add(new ChordSearchResult(title, artist != null ? artist : "", fullUrl, null, null));
 
                 if (results.size() >= 15) break;
             }
@@ -108,8 +110,20 @@ public class ChordSearchService {
 
             // Acordes en <pre>
             String chords = "";
+            String tone = null;
             Element pre = doc.selectFirst("pre");
             if (pre != null) {
+                // Extraer tonalidad del primer acorde <b> en el contenido
+                Element firstChord = pre.selectFirst("b");
+                if (firstChord != null) {
+                    String chordText = firstChord.text().trim();
+                    // Extraer solo la nota raíz (ej: "Am7" -> "Am", "D" -> "D", "F#m" -> "F#m")
+                    Matcher toneMatcher = Pattern.compile("^([A-G][#b]?m?)").matcher(chordText);
+                    if (toneMatcher.find()) {
+                        tone = toneMatcher.group(1);
+                    }
+                }
+
                 // Reemplazar <b> tags con el texto del acorde (mantener formato)
                 chords = pre.html()
                         .replaceAll("<b>", "")
@@ -124,7 +138,7 @@ public class ChordSearchService {
                         .trim();
             }
 
-            return new ChordSearchResult(title, artist, url, chords);
+            return new ChordSearchResult(title, artist, url, chords, tone);
 
         } catch (IOException e) {
             throw new RuntimeException("Error al obtener acordes de " + url + ": " + e.getMessage(), e);

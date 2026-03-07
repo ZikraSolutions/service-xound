@@ -49,6 +49,11 @@ public class SongRepository {
         return jdbcTemplate.query(sql, rowMapper, "%" + title + "%");
     }
 
+    public Optional<Song> findByTitleAndArtist(String title, String artist) {
+        String sql = "SELECT * FROM songs WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?) AND status = true";
+        return jdbcTemplate.query(sql, rowMapper, title, artist).stream().findFirst();
+    }
+
     public int save(Song song) {
         String sql = "INSERT INTO songs (title, artist, tone, content, lyrics, notes, bpm, time_signature, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         return jdbcTemplate.update(sql,
