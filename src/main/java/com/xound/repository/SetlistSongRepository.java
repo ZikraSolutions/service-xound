@@ -12,17 +12,22 @@ public class SetlistSongRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<SetlistSong> rowMapper = (rs, rowNum) -> new SetlistSong(
-            rs.getLong("id"),
-            rs.getLong("event_id"),
-            rs.getLong("song_id"),
-            rs.getInt("position"),
-            rs.getString("song_title"),
-            rs.getString("song_artist"),
-            rs.getString("song_tone"),
-            rs.getString("song_content"),
-            rs.getString("song_notes")
-    );
+    private final RowMapper<SetlistSong> rowMapper = (rs, rowNum) -> {
+        SetlistSong ss = new SetlistSong();
+        ss.setId(rs.getLong("id"));
+        ss.setEventId(rs.getLong("event_id"));
+        ss.setSongId(rs.getLong("song_id"));
+        ss.setPosition(rs.getInt("position"));
+        ss.setSongTitle(rs.getString("song_title"));
+        ss.setSongArtist(rs.getString("song_artist"));
+        ss.setSongTone(rs.getString("song_tone"));
+        ss.setSongContent(rs.getString("song_content"));
+        ss.setSongNotes(rs.getString("song_notes"));
+        int bpm = rs.getInt("song_bpm");
+        ss.setSongBpm(rs.wasNull() ? null : bpm);
+        ss.setSongTimeSignature(rs.getString("song_time_signature"));
+        return ss;
+    };
 
     public SetlistSongRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -31,7 +36,8 @@ public class SetlistSongRepository {
     public List<SetlistSong> findByEventId(Long eventId) {
         String sql = "SELECT ss.id, ss.event_id, ss.song_id, ss.position, " +
                      "s.title AS song_title, s.artist AS song_artist, s.tone AS song_tone, " +
-                     "s.content AS song_content, s.notes AS song_notes " +
+                     "s.content AS song_content, s.notes AS song_notes, " +
+                     "s.bpm AS song_bpm, s.time_signature AS song_time_signature " +
                      "FROM setlist_songs ss " +
                      "JOIN songs s ON ss.song_id = s.id " +
                      "WHERE ss.event_id = ? AND s.status = true " +
