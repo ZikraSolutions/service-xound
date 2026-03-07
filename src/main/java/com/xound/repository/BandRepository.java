@@ -89,4 +89,9 @@ public class BandRepository {
     public int updateInviteCode(Long bandId, String newCode) {
         return jdbcTemplate.update("UPDATE bands SET invite_code = ? WHERE id = ?", newCode, bandId);
     }
+
+    public Optional<Band> findByMemberUserId(Long userId) {
+        String sql = "SELECT b.* FROM bands b JOIN band_members bm ON b.id = bm.band_id WHERE bm.user_id = ?";
+        return jdbcTemplate.query(sql, bandMapper, userId).stream().findFirst();
+    }
 }

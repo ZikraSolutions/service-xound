@@ -34,6 +34,10 @@ public class BandService {
         return bandRepository.findByAdminUserId(adminUserId).orElse(null);
     }
 
+    public Band getBandByMember(Long userId) {
+        return bandRepository.findByMemberUserId(userId).orElse(null);
+    }
+
     public Band createBand(Long adminUserId, String name) {
         if (bandRepository.findByAdminUserId(adminUserId).isPresent()) {
             throw new RuntimeException("Ya tienes una banda creada");

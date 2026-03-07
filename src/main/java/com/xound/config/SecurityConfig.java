@@ -43,21 +43,23 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/lyrics/**").authenticated()
                 // Eventos publicados accesibles para músicos autenticados
                 .requestMatchers(HttpMethod.GET, "/api/events/published").authenticated()
-                // Cambio de rol solo para ADMIN
-                .requestMatchers(HttpMethod.PUT, "/api/users/*/role").hasRole("ADMIN")
-                // CRUD de eventos y canciones solo para ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/events", "/api/songs").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/events/**", "/api/songs/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/events/**", "/api/songs/**").hasRole("ADMIN")
-                // Setlist management solo para ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/events/*/setlist").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/events/*/setlist/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/events/*/setlist/**").hasRole("ADMIN")
-                // Band management - crear y gestionar banda solo ADMIN
-                .requestMatchers(HttpMethod.POST, "/api/bands").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/bands/regenerate-code").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/bands/*/members/*").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/bands/*/members/*").hasRole("ADMIN")
+                // Usar código admin - cualquier autenticado (antes de la regla general)
+                .requestMatchers(HttpMethod.POST, "/api/admin/use-admin-code").authenticated()
+                // Super admin panel - todo lo demás
+                .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
+                // CRUD de eventos y canciones solo para ADMIN o SUPER_ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/events", "/api/songs").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/events/**", "/api/songs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/events/**", "/api/songs/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                // Setlist management solo para ADMIN o SUPER_ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/events/*/setlist").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/events/*/setlist/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/events/*/setlist/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                // Band management - crear y gestionar banda solo ADMIN o SUPER_ADMIN
+                .requestMatchers(HttpMethod.POST, "/api/bands").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bands/regenerate-code").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/bands/*/members/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/bands/*/members/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Join band - cualquier usuario autenticado
                 .requestMatchers(HttpMethod.POST, "/api/bands/join").authenticated()
                 // Todo lo demás requiere autenticación

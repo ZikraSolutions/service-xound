@@ -30,6 +30,16 @@ public class BandController {
         return ResponseEntity.ok(band);
     }
 
+    @GetMapping("/member")
+    public ResponseEntity<?> getMyBandAsMember(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        Band band = bandService.getBandByMember(userId);
+        if (band == null) {
+            return ResponseEntity.ok(Map.of("band", (Object) "null"));
+        }
+        return ResponseEntity.ok(band);
+    }
+
     @PostMapping
     public ResponseEntity<?> createBand(@RequestBody Map<String, String> body, Authentication auth) {
         try {
