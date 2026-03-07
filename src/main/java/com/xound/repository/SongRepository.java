@@ -13,18 +13,23 @@ public class SongRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<Song> rowMapper = (rs, rowNum) -> new Song(
-            rs.getLong("id"),
-            rs.getString("title"),
-            rs.getString("artist"),
-            rs.getString("tone"),
-            rs.getString("content"),
-            rs.getString("lyrics"),
-            rs.getString("notes"),
-            rs.getLong("user_id"),
-            rs.getBoolean("status"),
-            rs.getTimestamp("created_at").toLocalDateTime()
-    );
+    private final RowMapper<Song> rowMapper = (rs, rowNum) -> {
+        Song song = new Song();
+        song.setId(rs.getLong("id"));
+        song.setTitle(rs.getString("title"));
+        song.setArtist(rs.getString("artist"));
+        song.setTone(rs.getString("tone"));
+        song.setContent(rs.getString("content"));
+        song.setLyrics(rs.getString("lyrics"));
+        song.setNotes(rs.getString("notes"));
+        int bpm = rs.getInt("bpm");
+        song.setBpm(rs.wasNull() ? null : bpm);
+        song.setTimeSignature(rs.getString("time_signature"));
+        song.setUserId(rs.getLong("user_id"));
+        song.setStatus(rs.getBoolean("status"));
+        song.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        return song;
+    };
 
     public SongRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -45,17 +50,19 @@ public class SongRepository {
     }
 
     public int save(Song song) {
-        String sql = "INSERT INTO songs (title, artist, tone, content, lyrics, notes, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO songs (title, artist, tone, content, lyrics, notes, bpm, time_signature, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         return jdbcTemplate.update(sql,
                 song.getTitle(), song.getArtist(), song.getTone(),
-                song.getContent(), song.getLyrics(), song.getNotes(), song.getUserId());
+                song.getContent(), song.getLyrics(), song.getNotes(),
+                song.getBpm(), song.getTimeSignature(), song.getUserId());
     }
 
     public int update(Song song) {
-        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, lyrics = ?, notes = ? WHERE id = ?";
+        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, lyrics = ?, notes = ?, bpm = ?, time_signature = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
                 song.getTitle(), song.getArtist(), song.getTone(),
-                song.getContent(), song.getLyrics(), song.getNotes(), song.getId());
+                song.getContent(), song.getLyrics(), song.getNotes(),
+                song.getBpm(), song.getTimeSignature(), song.getId());
     }
 
     public int changeStatus(Long id, boolean status) {

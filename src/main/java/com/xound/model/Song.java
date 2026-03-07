@@ -17,6 +17,8 @@ public class Song {
     private String content;
     private String lyrics;
     private String notes;
+    private Integer bpm;
+    private String timeSignature;
     private Long userId;
     private Boolean status;
     private LocalDateTime createdAt;
