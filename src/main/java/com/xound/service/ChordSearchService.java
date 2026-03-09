@@ -155,7 +155,7 @@ public class ChordSearchService {
         try {
             java.net.URI uri = java.net.URI.create(url);
             String host = uri.getHost();
-            if (host == null || !host.endsWith(ALLOWED_HOST)) {
+            if (host == null || (!host.equals(ALLOWED_HOST) && !host.endsWith("." + ALLOWED_HOST))) {
                 throw new IllegalArgumentException("Solo se permiten URLs de " + ALLOWED_HOST);
             }
         } catch (IllegalArgumentException e) {

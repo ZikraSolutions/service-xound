@@ -38,11 +38,16 @@ public class SecurityConfig {
                 .requestMatchers("/api/events/share/**").permitAll()
                 // Swagger UI
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+                // Endpoints de usuarios solo para SUPER_ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/users").hasRole("SUPER_ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/users/*/role").hasRole("SUPER_ADMIN")
                 // Búsqueda de acordes y letras (usuarios autenticados)
                 .requestMatchers(HttpMethod.GET, "/api/chords/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/lyrics/**").authenticated()
                 // Eventos publicados accesibles para músicos autenticados
                 .requestMatchers(HttpMethod.GET, "/api/events/published").authenticated()
+                // Lista de todos los eventos solo para ADMIN/SUPER_ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/events").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 // Usar código admin - cualquier autenticado (antes de la regla general)
                 .requestMatchers(HttpMethod.POST, "/api/admin/use-admin-code").authenticated()
                 // Super admin panel - todo lo demás

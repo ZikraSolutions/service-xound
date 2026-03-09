@@ -89,6 +89,14 @@ public class SuperAdminController {
                     .orElseThrow(() -> new RuntimeException("Código inválido o ya usado"));
 
             Long userId = (Long) auth.getCredentials();
+
+            // Verificar que no sea ya admin
+            User currentUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            if ("ADMIN".equals(currentUser.getRoleName()) || "SUPER_ADMIN".equals(currentUser.getRoleName())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Ya eres administrador"));
+            }
+
             Long adminRoleId = roleRepository.findByName("ADMIN")
                     .orElseThrow(() -> new RuntimeException("Rol ADMIN no encontrado"))
                     .getId();

@@ -38,6 +38,10 @@ public class UserService {
             throw new RuntimeException("El username solo puede contener letras y numeros, sin espacios ni caracteres especiales");
         }
 
+        if (user.getPassword() == null || user.getPassword().isBlank()) {
+            throw new RuntimeException("La contraseña es obligatoria");
+        }
+
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new RuntimeException("El username ya esta registrado");
         }
@@ -75,6 +79,10 @@ public class UserService {
     }
 
     public Map<String, Object> login(String username, String password) {
+        if (username == null || password == null) {
+            throw new RuntimeException("Credenciales invalidas");
+        }
+
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Credenciales invalidas"));
 
