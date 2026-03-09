@@ -1,8 +1,10 @@
 package com.xound.controller;
 
 import com.xound.model.AdminInvite;
+import com.xound.model.Band;
 import com.xound.model.User;
 import com.xound.repository.AdminInviteRepository;
+import com.xound.repository.BandRepository;
 import com.xound.repository.RoleRepository;
 import com.xound.repository.UserRepository;
 import org.springframework.http.ResponseEntity;
@@ -20,12 +22,14 @@ public class SuperAdminController {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final AdminInviteRepository adminInviteRepository;
+    private final BandRepository bandRepository;
 
     public SuperAdminController(UserRepository userRepository, RoleRepository roleRepository,
-                                AdminInviteRepository adminInviteRepository) {
+                                AdminInviteRepository adminInviteRepository, BandRepository bandRepository) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.adminInviteRepository = adminInviteRepository;
+        this.bandRepository = bandRepository;
     }
 
     @GetMapping("/users")
@@ -91,6 +95,10 @@ public class SuperAdminController {
 
             userRepository.updateRole(userId, adminRoleId);
             adminInviteRepository.markUsed(invite.getId(), userId);
+
+            // Remove user from any band they were a member of (admins manage their own bands)
+            bandRepository.findByMemberUserId(userId).ifPresent(band ->
+                    bandRepository.removeMember(band.getId(), userId));
 
             User updated = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("Error"));

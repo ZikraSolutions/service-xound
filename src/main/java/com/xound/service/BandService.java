@@ -2,7 +2,9 @@ package com.xound.service;
 
 import com.xound.model.Band;
 import com.xound.model.BandMember;
+import com.xound.model.User;
 import com.xound.repository.BandRepository;
+import com.xound.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,9 +14,11 @@ import java.util.UUID;
 public class BandService {
 
     private final BandRepository bandRepository;
+    private final UserRepository userRepository;
 
-    public BandService(BandRepository bandRepository) {
+    public BandService(BandRepository bandRepository, UserRepository userRepository) {
         this.bandRepository = bandRepository;
+        this.userRepository = userRepository;
     }
 
     public Band getOrCreateBand(Long adminUserId, String bandName) {
@@ -58,6 +62,14 @@ public class BandService {
     public void addMemberByInviteCode(String inviteCode, Long userId) {
         Band band = bandRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new RuntimeException("Código de invitación inválido"));
+
+        // Only musicians can join a band - admins/super_admins already have their own
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (!"MUSICIAN".equals(user.getRoleName())) {
+            throw new RuntimeException("Solo los músicos pueden unirse a una banda");
+        }
+
         if (bandRepository.isMember(band.getId(), userId)) {
             throw new RuntimeException("El usuario ya es miembro de la banda");
         }
