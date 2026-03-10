@@ -24,6 +24,12 @@ public class SongController {
         return ResponseEntity.ok(songService.findAll());
     }
 
+    @GetMapping("/band")
+    public ResponseEntity<List<Song>> findByBand(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        return ResponseEntity.ok(songService.findByBand(userId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
         try {

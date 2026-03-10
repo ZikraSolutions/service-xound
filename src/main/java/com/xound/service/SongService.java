@@ -1,10 +1,13 @@
 package com.xound.service;
 
+import com.xound.model.Band;
 import com.xound.model.Song;
+import com.xound.repository.BandRepository;
 import com.xound.repository.HiddenSongRepository;
 import com.xound.repository.SongRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,14 +16,30 @@ public class SongService {
 
     private final SongRepository songRepository;
     private final HiddenSongRepository hiddenSongRepository;
+    private final BandRepository bandRepository;
 
-    public SongService(SongRepository songRepository, HiddenSongRepository hiddenSongRepository) {
+    public SongService(SongRepository songRepository, HiddenSongRepository hiddenSongRepository, BandRepository bandRepository) {
         this.songRepository = songRepository;
         this.hiddenSongRepository = hiddenSongRepository;
+        this.bandRepository = bandRepository;
     }
 
     public List<Song> findAll() {
         return songRepository.findAll();
+    }
+
+    public List<Song> findByBand(Long userId) {
+        // First check if user is an admin with their own band
+        Optional<Band> adminBand = bandRepository.findByAdminUserId(userId);
+        if (adminBand.isPresent()) {
+            return songRepository.findByUserId(userId);
+        }
+        // Otherwise find the band as a member and get the admin's songs
+        Optional<Band> memberBand = bandRepository.findByMemberUserId(userId);
+        if (memberBand.isPresent()) {
+            return songRepository.findByUserId(memberBand.get().getAdminUserId());
+        }
+        return Collections.emptyList();
     }
 
     public Song findById(Long id) {

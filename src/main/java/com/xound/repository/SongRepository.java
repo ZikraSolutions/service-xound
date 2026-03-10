@@ -40,6 +40,10 @@ public class SongRepository {
         return jdbcTemplate.query("SELECT * FROM songs WHERE status = true ORDER BY title", rowMapper);
     }
 
+    public List<Song> findByUserId(Long userId) {
+        return jdbcTemplate.query("SELECT * FROM songs WHERE user_id = ? AND status = true ORDER BY title", rowMapper, userId);
+    }
+
     public Optional<Song> findById(Long id) {
         return jdbcTemplate.query("SELECT * FROM songs WHERE id = ? AND status = true", rowMapper, id)
                 .stream().findFirst();
