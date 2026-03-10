@@ -27,7 +27,8 @@ public class SongRepository {
         song.setTimeSignature(rs.getString("time_signature"));
         song.setUserId(rs.getLong("user_id"));
         song.setStatus(rs.getBoolean("status"));
-        song.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        song.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
         return song;
     };
 

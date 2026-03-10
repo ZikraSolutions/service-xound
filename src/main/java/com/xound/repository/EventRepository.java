@@ -13,17 +13,21 @@ public class EventRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<Event> rowMapper = (rs, rowNum) -> new Event(
+    private final RowMapper<Event> rowMapper = (rs, rowNum) -> {
+        java.sql.Timestamp eventDate = rs.getTimestamp("event_date");
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        return new Event(
             rs.getLong("id"),
             rs.getString("title"),
-            rs.getTimestamp("event_date").toLocalDateTime(),
+            eventDate != null ? eventDate.toLocalDateTime() : null,
             rs.getString("venue"),
             rs.getBoolean("published"),
             rs.getString("share_code"),
             rs.getLong("user_id"),
             rs.getBoolean("status"),
-            rs.getTimestamp("created_at").toLocalDateTime()
-    );
+            createdAt != null ? createdAt.toLocalDateTime() : null
+        );
+    };
 
     public EventRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

@@ -2,6 +2,7 @@ package com.xound.service;
 
 import com.xound.repository.FavoriteRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class FavoriteService {
         return favoriteRepository.findSongIdsByUserId(userId);
     }
 
+    @Transactional
     public boolean toggle(Long songId, Long userId) {
         if (favoriteRepository.exists(songId, userId)) {
             favoriteRepository.remove(songId, userId);

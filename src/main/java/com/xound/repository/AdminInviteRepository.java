@@ -20,7 +20,8 @@ public class AdminInviteRepository {
         invite.setUsed(rs.getBoolean("used"));
         Long usedBy = rs.getLong("used_by_user_id");
         invite.setUsedByUserId(rs.wasNull() ? null : usedBy);
-        invite.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        invite.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
         return invite;
     };
 

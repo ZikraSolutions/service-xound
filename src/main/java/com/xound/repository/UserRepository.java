@@ -21,7 +21,8 @@ public class UserRepository {
         user.setPassword(rs.getString("password"));
         user.setRoleId(rs.getLong("role_id"));
         user.setStatus(rs.getBoolean("status"));
-        user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        user.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
         try {
             user.setRoleName(rs.getString("role_name"));
         } catch (Exception e) {

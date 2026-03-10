@@ -20,7 +20,8 @@ public class BandRepository {
         band.setName(rs.getString("name"));
         band.setAdminUserId(rs.getLong("admin_user_id"));
         band.setInviteCode(rs.getString("invite_code"));
-        band.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
+        band.setCreatedAt(createdAt != null ? createdAt.toLocalDateTime() : null);
         return band;
     };
 
@@ -29,7 +30,8 @@ public class BandRepository {
         m.setId(rs.getLong("id"));
         m.setBandId(rs.getLong("band_id"));
         m.setUserId(rs.getLong("user_id"));
-        m.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        java.sql.Timestamp memberCreatedAt = rs.getTimestamp("created_at");
+        m.setCreatedAt(memberCreatedAt != null ? memberCreatedAt.toLocalDateTime() : null);
         m.setUserName(rs.getString("user_name"));
         m.setUserUsername(rs.getString("user_username"));
         m.setRoleName(rs.getString("role_name"));

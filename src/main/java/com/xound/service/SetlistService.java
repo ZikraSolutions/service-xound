@@ -3,6 +3,7 @@ package com.xound.service;
 import com.xound.model.SetlistSong;
 import com.xound.repository.SetlistSongRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ public class SetlistService {
         return setlistSongRepository.findByEventId(eventId);
     }
 
+    @Transactional
     public void addSong(Long eventId, Long songId) {
         int nextPosition = setlistSongRepository.getNextPosition(eventId);
         setlistSongRepository.addSong(eventId, songId, nextPosition);
@@ -29,6 +31,7 @@ public class SetlistService {
         setlistSongRepository.removeSong(eventId, songId);
     }
 
+    @Transactional
     public void reorder(Long eventId, List<Map<String, Object>> newOrder) {
         for (Map<String, Object> item : newOrder) {
             Long songId = Long.valueOf(item.get("songId").toString());
