@@ -13,11 +13,13 @@ public class RoleRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<Role> rowMapper = (rs, rowNum) -> new Role(
-            rs.getLong("id"),
-            rs.getString("name"),
-            rs.getBoolean("status")
-    );
+    private final RowMapper<Role> rowMapper = (rs, rowNum) -> {
+        Role role = new Role();
+        role.setId(rs.getLong("id"));
+        role.setName(rs.getString("name"));
+        role.setStatus(rs.getBoolean("status"));
+        return role;
+    };
 
     public RoleRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
