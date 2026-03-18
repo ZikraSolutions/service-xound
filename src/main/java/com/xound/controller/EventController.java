@@ -20,13 +20,15 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Event>> findAll() {
-        return ResponseEntity.ok(eventService.findAll());
+    public ResponseEntity<List<Event>> findAll(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        return ResponseEntity.ok(eventService.findAllByUserId(userId));
     }
 
     @GetMapping("/published")
-    public ResponseEntity<List<Event>> findPublished() {
-        return ResponseEntity.ok(eventService.findPublished());
+    public ResponseEntity<List<Event>> findPublished(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        return ResponseEntity.ok(eventService.findPublishedForMusician(userId));
     }
 
     @GetMapping("/{id}")

@@ -1,27 +1,44 @@
 package com.xound.service;
 
+import com.xound.model.Band;
 import com.xound.model.Event;
+import com.xound.repository.BandRepository;
 import com.xound.repository.EventRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final BandRepository bandRepository;
 
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository, BandRepository bandRepository) {
         this.eventRepository = eventRepository;
+        this.bandRepository = bandRepository;
     }
 
     public List<Event> findAll() {
         return eventRepository.findAll();
     }
 
+    public List<Event> findAllByUserId(Long userId) {
+        return eventRepository.findAllByUserId(userId);
+    }
+
     public List<Event> findPublished() {
         return eventRepository.findPublished();
+    }
+
+    public List<Event> findPublishedForMusician(Long musicianUserId) {
+        Optional<Band> band = bandRepository.findByMemberUserId(musicianUserId);
+        if (band.isPresent()) {
+            return eventRepository.findPublishedByBandAdmin(band.get().getAdminUserId());
+        }
+        return List.of();
     }
 
     public Event findById(Long id) {

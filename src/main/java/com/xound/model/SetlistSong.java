@@ -18,6 +18,7 @@ public class SetlistSong {
     private String songArtist;
     private String songTone;
     private String songContent;
+    private String songLyrics;
     private String songNotes;
     private Integer songBpm;
     private String songTimeSignature;

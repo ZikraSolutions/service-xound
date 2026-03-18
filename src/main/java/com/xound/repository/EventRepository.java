@@ -38,10 +38,22 @@ public class EventRepository {
                 "SELECT * FROM events WHERE status = true ORDER BY event_date DESC", rowMapper);
     }
 
+    public List<Event> findAllByUserId(Long userId) {
+        return jdbcTemplate.query(
+                "SELECT * FROM events WHERE user_id = ? AND status = true ORDER BY event_date DESC",
+                rowMapper, userId);
+    }
+
     public List<Event> findPublished() {
         return jdbcTemplate.query(
                 "SELECT * FROM events WHERE published = true AND status = true ORDER BY event_date DESC",
                 rowMapper);
+    }
+
+    public List<Event> findPublishedByBandAdmin(Long adminUserId) {
+        return jdbcTemplate.query(
+                "SELECT * FROM events WHERE user_id = ? AND published = true AND status = true ORDER BY event_date DESC",
+                rowMapper, adminUserId);
     }
 
     public Optional<Event> findById(Long id) {

@@ -22,6 +22,7 @@ public class SetlistSongRepository {
         ss.setSongArtist(rs.getString("song_artist"));
         ss.setSongTone(rs.getString("song_tone"));
         ss.setSongContent(rs.getString("song_content"));
+        ss.setSongLyrics(rs.getString("song_lyrics"));
         ss.setSongNotes(rs.getString("song_notes"));
         int bpm = rs.getInt("song_bpm");
         ss.setSongBpm(rs.wasNull() ? null : bpm);
@@ -36,7 +37,7 @@ public class SetlistSongRepository {
     public List<SetlistSong> findByEventId(Long eventId) {
         String sql = "SELECT ss.id, ss.event_id, ss.song_id, ss.position, " +
                      "s.title AS song_title, s.artist AS song_artist, s.tone AS song_tone, " +
-                     "s.content AS song_content, s.notes AS song_notes, " +
+                     "s.content AS song_content, s.lyrics AS song_lyrics, s.notes AS song_notes, " +
                      "s.bpm AS song_bpm, s.time_signature AS song_time_signature " +
                      "FROM setlist_songs ss " +
                      "JOIN songs s ON ss.song_id = s.id " +
