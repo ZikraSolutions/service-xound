@@ -20,8 +20,9 @@ public class SongController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Song>> findAll() {
-        return ResponseEntity.ok(songService.findAll());
+    public ResponseEntity<List<Song>> findAll(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        return ResponseEntity.ok(songService.findAllByUserId(userId));
     }
 
     @GetMapping("/band")
@@ -40,8 +41,9 @@ public class SongController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Song>> search(@RequestParam String title) {
-        return ResponseEntity.ok(songService.searchByTitle(title));
+    public ResponseEntity<List<Song>> search(@RequestParam String title, Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        return ResponseEntity.ok(songService.searchByTitleAndUserId(title, userId));
     }
 
     @PostMapping

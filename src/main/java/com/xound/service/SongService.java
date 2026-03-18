@@ -28,6 +28,10 @@ public class SongService {
         return songRepository.findAll();
     }
 
+    public List<Song> findAllByUserId(Long userId) {
+        return songRepository.findByUserId(userId);
+    }
+
     public List<Song> findByBand(Long userId) {
         // First check if user is an admin with their own band
         Optional<Band> adminBand = bandRepository.findByAdminUserId(userId);
@@ -51,10 +55,14 @@ public class SongService {
         return songRepository.searchByTitle(title);
     }
 
+    public List<Song> searchByTitleAndUserId(String title, Long userId) {
+        return songRepository.searchByTitleAndUserId(title, userId);
+    }
+
     public Song save(Song song) {
-        // Verificar si ya existe una canción con el mismo título y artista
-        Optional<Song> existing = songRepository.findByTitleAndArtist(
-                song.getTitle(), song.getArtist() != null ? song.getArtist() : "");
+        // Verificar si ya existe una canción con el mismo título y artista para este usuario
+        Optional<Song> existing = songRepository.findByTitleAndArtistAndUserId(
+                song.getTitle(), song.getArtist() != null ? song.getArtist() : "", song.getUserId());
 
         if (existing.isPresent()) {
             Song found = existing.get();
@@ -63,7 +71,7 @@ public class SongService {
                 hiddenSongRepository.remove(found.getId(), song.getUserId());
                 return found;
             }
-            throw new RuntimeException("Ya existe una canción con ese título y artista");
+            throw new RuntimeException("Esta canción ya se encuentra en tu biblioteca");
         }
 
         songRepository.save(song);

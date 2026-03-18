@@ -54,9 +54,19 @@ public class SongRepository {
         return jdbcTemplate.query(sql, rowMapper, "%" + title + "%");
     }
 
+    public List<Song> searchByTitleAndUserId(String title, Long userId) {
+        String sql = "SELECT * FROM songs WHERE LOWER(title) LIKE LOWER(?) AND user_id = ? AND status = true ORDER BY title";
+        return jdbcTemplate.query(sql, rowMapper, "%" + title + "%", userId);
+    }
+
     public Optional<Song> findByTitleAndArtist(String title, String artist) {
         String sql = "SELECT * FROM songs WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?) AND status = true";
         return jdbcTemplate.query(sql, rowMapper, title, artist).stream().findFirst();
+    }
+
+    public Optional<Song> findByTitleAndArtistAndUserId(String title, String artist, Long userId) {
+        String sql = "SELECT * FROM songs WHERE LOWER(title) = LOWER(?) AND LOWER(artist) = LOWER(?) AND user_id = ? AND status = true";
+        return jdbcTemplate.query(sql, rowMapper, title, artist, userId).stream().findFirst();
     }
 
     public int save(Song song) {
