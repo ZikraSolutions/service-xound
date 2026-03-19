@@ -82,6 +82,17 @@ public class BandController {
         }
     }
 
+    @PostMapping("/leave")
+    public ResponseEntity<?> leaveBand(Authentication auth) {
+        try {
+            Long userId = (Long) auth.getCredentials();
+            bandService.leaveBand(userId);
+            return ResponseEntity.ok(Map.of("message", "Saliste de la banda exitosamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/join")
     public ResponseEntity<?> joinBand(@RequestBody Map<String, String> body, Authentication auth) {
         try {

@@ -65,8 +65,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/bands/regenerate-code").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/bands/*/members/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/bands/*/members/*").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // Join band - cualquier usuario autenticado
+                // Join/leave band - cualquier usuario autenticado
                 .requestMatchers(HttpMethod.POST, "/api/bands/join").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/bands/leave").authenticated()
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )

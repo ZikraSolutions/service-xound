@@ -59,6 +59,12 @@ public class BandService {
         return bandRepository.findMembers(bandId);
     }
 
+    public void leaveBand(Long userId) {
+        Band band = bandRepository.findByMemberUserId(userId)
+                .orElseThrow(() -> new RuntimeException("No perteneces a ninguna banda"));
+        bandRepository.removeMember(band.getId(), userId);
+    }
+
     public void addMemberByInviteCode(String inviteCode, Long userId) {
         Band band = bandRepository.findByInviteCode(inviteCode)
                 .orElseThrow(() -> new RuntimeException("Código de invitación inválido"));
