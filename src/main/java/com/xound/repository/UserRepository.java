@@ -70,4 +70,28 @@ public class UserRepository {
     public int updateRole(Long userId, Long roleId) {
         return jdbcTemplate.update("UPDATE users SET role_id = ? WHERE id = ?", roleId, userId);
     }
+
+    public void deleteById(Long id) {
+        // Delete hidden songs
+        jdbcTemplate.update("DELETE FROM hidden_songs WHERE user_id = ?", id);
+        // Delete favorites
+        jdbcTemplate.update("DELETE FROM favorites WHERE user_id = ?", id);
+        // Delete setlist songs for user's events
+        jdbcTemplate.update("DELETE FROM setlist_songs WHERE event_id IN (SELECT id FROM events WHERE user_id = ?)", id);
+        // Delete events
+        jdbcTemplate.update("DELETE FROM events WHERE user_id = ?", id);
+        // Delete setlist songs referencing user's songs
+        jdbcTemplate.update("DELETE FROM setlist_songs WHERE song_id IN (SELECT id FROM songs WHERE user_id = ?)", id);
+        // Delete songs
+        jdbcTemplate.update("DELETE FROM songs WHERE user_id = ?", id);
+        // Remove from band members
+        jdbcTemplate.update("DELETE FROM band_members WHERE user_id = ?", id);
+        // Delete bands owned by this user
+        jdbcTemplate.update("DELETE FROM band_members WHERE band_id IN (SELECT id FROM bands WHERE admin_user_id = ?)", id);
+        jdbcTemplate.update("DELETE FROM bands WHERE admin_user_id = ?", id);
+        // Clear admin invite references
+        jdbcTemplate.update("UPDATE admin_invites SET used_by_user_id = NULL WHERE used_by_user_id = ?", id);
+        // Delete user
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
+    }
 }

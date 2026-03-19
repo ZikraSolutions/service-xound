@@ -43,7 +43,7 @@ public class SuperAdminController {
         if (myId.equals(id)) {
             return ResponseEntity.badRequest().body(Map.of("error", "No puedes eliminar tu propia cuenta"));
         }
-        userRepository.changeStatus(id, false);
+        userRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Usuario eliminado"));
     }
 
