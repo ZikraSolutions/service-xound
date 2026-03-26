@@ -85,6 +85,12 @@ public class SongService {
         songRepository.update(song);
     }
 
+    public void updateArtworkUrl(Long id, String artworkUrl) {
+        songRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Canción no encontrada"));
+        songRepository.updateArtworkUrl(id, artworkUrl);
+    }
+
     public void delete(Long id) {
         songRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Canción no encontrada"));

@@ -43,6 +43,9 @@ public class Song {
     @Column(name = "time_signature")
     private String timeSignature;
 
+    @Column(name = "artwork_url", columnDefinition = "TEXT")
+    private String artworkUrl;
+
     @Column(name = "user_id", insertable = false, updatable = false)
     private Long userId;
 

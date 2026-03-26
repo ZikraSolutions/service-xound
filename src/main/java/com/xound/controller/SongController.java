@@ -72,6 +72,16 @@ public class SongController {
         }
     }
 
+    @PatchMapping("/{id}/artwork")
+    public ResponseEntity<?> updateArtwork(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            songService.updateArtworkUrl(id, body.get("artworkUrl"));
+            return ResponseEntity.ok(Map.of("message", "Carátula actualizada exitosamente"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {

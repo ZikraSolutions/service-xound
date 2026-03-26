@@ -25,6 +25,7 @@ public class SongRepository {
         int bpm = rs.getInt("bpm");
         song.setBpm(rs.wasNull() ? null : bpm);
         song.setTimeSignature(rs.getString("time_signature"));
+        song.setArtworkUrl(rs.getString("artwork_url"));
         song.setUserId(rs.getLong("user_id"));
         song.setStatus(rs.getBoolean("status"));
         java.sql.Timestamp createdAt = rs.getTimestamp("created_at");
@@ -78,11 +79,15 @@ public class SongRepository {
     }
 
     public int update(Song song) {
-        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, lyrics = ?, notes = ?, bpm = ?, time_signature = ? WHERE id = ?";
+        String sql = "UPDATE songs SET title = ?, artist = ?, tone = ?, content = ?, lyrics = ?, notes = ?, bpm = ?, time_signature = ?, artwork_url = ? WHERE id = ?";
         return jdbcTemplate.update(sql,
                 song.getTitle(), song.getArtist(), song.getTone(),
                 song.getContent(), song.getLyrics(), song.getNotes(),
-                song.getBpm(), song.getTimeSignature(), song.getId());
+                song.getBpm(), song.getTimeSignature(), song.getArtworkUrl(), song.getId());
+    }
+
+    public int updateArtworkUrl(Long id, String artworkUrl) {
+        return jdbcTemplate.update("UPDATE songs SET artwork_url = ? WHERE id = ?", artworkUrl, id);
     }
 
     public int changeStatus(Long id, boolean status) {
