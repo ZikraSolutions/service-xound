@@ -32,6 +32,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // WebSocket upgrade — autenticación manejada por STOMP ChannelInterceptor
+                .requestMatchers("/ws/**").permitAll()
                 // Rutas públicas
                 .requestMatchers("/api/users/login", "/api/users/register").permitAll()
                 .requestMatchers("/api/roles").permitAll()
