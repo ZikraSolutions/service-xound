@@ -1,5 +1,6 @@
 package com.xound.controller;
 
+import com.xound.exception.BadRequestException;
 import com.xound.service.LyricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,12 +24,12 @@ public class LyricsController {
     @GetMapping("/search")
     @Operation(summary = "Buscar letra de una cancion",
                description = "Busca la letra por artista y titulo usando la API de lyrics.ovh")
-    public ResponseEntity<?> search(
+    public ResponseEntity<Map<String, Object>> search(
             @Parameter(description = "Nombre del artista") @RequestParam String artist,
             @Parameter(description = "Titulo de la cancion") @RequestParam String title) {
 
         if (artist == null || artist.isBlank() || title == null || title.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Los parametros 'artist' y 'title' son requeridos"));
+            throw new BadRequestException("Los parametros 'artist' y 'title' son requeridos");
         }
 
         String lyrics = lyricsService.searchLyrics(artist, title);

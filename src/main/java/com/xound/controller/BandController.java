@@ -1,8 +1,11 @@
 package com.xound.controller;
 
+import com.xound.dto.BandCreateRequest;
+import com.xound.dto.BandJoinRequest;
 import com.xound.model.Band;
 import com.xound.model.BandMember;
 import com.xound.service.BandService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,18 +44,11 @@ public class BandController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createBand(@RequestBody Map<String, String> body, Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            String name = body.get("name");
-            if (name == null || name.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "El nombre es obligatorio"));
-            }
-            Band band = bandService.createBand(userId, name.trim());
-            return ResponseEntity.ok(band);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Band> createBand(@Valid @RequestBody BandCreateRequest request,
+                                            Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        Band band = bandService.createBand(userId, request.getName().trim());
+        return ResponseEntity.ok(band);
     }
 
     @GetMapping("/{bandId}/members")
@@ -61,61 +57,42 @@ public class BandController {
     }
 
     @PostMapping("/{bandId}/members/{userId}")
-    public ResponseEntity<?> addMember(@PathVariable Long bandId, @PathVariable Long userId, Authentication auth) {
-        try {
-            Long adminUserId = (Long) auth.getCredentials();
-            bandService.addMember(bandId, adminUserId, userId);
-            return ResponseEntity.ok(Map.of("message", "Miembro agregado"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> addMember(@PathVariable Long bandId,
+                                                          @PathVariable Long userId,
+                                                          Authentication auth) {
+        Long adminUserId = (Long) auth.getCredentials();
+        bandService.addMember(bandId, adminUserId, userId);
+        return ResponseEntity.ok(Map.of("message", "Miembro agregado"));
     }
 
     @DeleteMapping("/{bandId}/members/{userId}")
-    public ResponseEntity<?> removeMember(@PathVariable Long bandId, @PathVariable Long userId, Authentication auth) {
-        try {
-            Long adminUserId = (Long) auth.getCredentials();
-            bandService.removeMember(bandId, adminUserId, userId);
-            return ResponseEntity.ok(Map.of("message", "Miembro eliminado"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> removeMember(@PathVariable Long bandId,
+                                                             @PathVariable Long userId,
+                                                             Authentication auth) {
+        Long adminUserId = (Long) auth.getCredentials();
+        bandService.removeMember(bandId, adminUserId, userId);
+        return ResponseEntity.ok(Map.of("message", "Miembro eliminado"));
     }
 
     @PostMapping("/leave")
-    public ResponseEntity<?> leaveBand(Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            bandService.leaveBand(userId);
-            return ResponseEntity.ok(Map.of("message", "Saliste de la banda exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> leaveBand(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        bandService.leaveBand(userId);
+        return ResponseEntity.ok(Map.of("message", "Saliste de la banda exitosamente"));
     }
 
     @PostMapping("/join")
-    public ResponseEntity<?> joinBand(@RequestBody Map<String, String> body, Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            String inviteCode = body.get("inviteCode");
-            if (inviteCode == null || inviteCode.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Código de invitación requerido"));
-            }
-            bandService.addMemberByInviteCode(inviteCode.trim().toUpperCase(), userId);
-            return ResponseEntity.ok(Map.of("message", "Te uniste a la banda exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> joinBand(@Valid @RequestBody BandJoinRequest request,
+                                                         Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        bandService.addMemberByInviteCode(request.getInviteCode().trim().toUpperCase(), userId);
+        return ResponseEntity.ok(Map.of("message", "Te uniste a la banda exitosamente"));
     }
 
     @PostMapping("/regenerate-code")
-    public ResponseEntity<?> regenerateCode(Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            String newCode = bandService.regenerateInviteCode(userId);
-            return ResponseEntity.ok(Map.of("inviteCode", newCode));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> regenerateCode(Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        String newCode = bandService.regenerateInviteCode(userId);
+        return ResponseEntity.ok(Map.of("inviteCode", newCode));
     }
 }

@@ -1,7 +1,10 @@
 package com.xound.controller;
 
+import com.xound.dto.ArtworkRequest;
+import com.xound.dto.SongRequest;
 import com.xound.model.Song;
 import com.xound.service.SongService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -32,12 +35,8 @@ public class SongController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(songService.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Song> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(songService.findById(id));
     }
 
     @GetMapping("/search")
@@ -47,48 +46,33 @@ public class SongController {
     }
 
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Song song, Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            song.setUserId(userId);
-            Song result = songService.save(song);
-            // Si la canción ya tenía ID, fue restaurada (des-ocultada)
-            if (result.getId() != null && result.getId() > 0 && song.getId() == null) {
-                return ResponseEntity.ok(Map.of("message", "La canción ya existía y fue restaurada"));
-            }
-            return ResponseEntity.ok(Map.of("message", "Canción creada exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    public ResponseEntity<Map<String, String>> save(@Valid @RequestBody SongRequest request,
+                                                     Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        Song result = songService.save(request, userId);
+        if (result.getId() != null && result.getId() > 0) {
+            return ResponseEntity.ok(Map.of("message", "La cancion ya existia y fue restaurada"));
         }
+        return ResponseEntity.ok(Map.of("message", "Cancion creada exitosamente"));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Song song) {
-        try {
-            songService.update(id, song);
-            return ResponseEntity.ok(Map.of("message", "Canción actualizada exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> update(@PathVariable Long id,
+                                                       @Valid @RequestBody SongRequest request) {
+        songService.update(id, request);
+        return ResponseEntity.ok(Map.of("message", "Cancion actualizada exitosamente"));
     }
 
     @PatchMapping("/{id}/artwork")
-    public ResponseEntity<?> updateArtwork(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        try {
-            songService.updateArtworkUrl(id, body.get("artworkUrl"));
-            return ResponseEntity.ok(Map.of("message", "Carátula actualizada exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> updateArtwork(@PathVariable Long id,
+                                                              @Valid @RequestBody ArtworkRequest request) {
+        songService.updateArtworkUrl(id, request.getArtworkUrl());
+        return ResponseEntity.ok(Map.of("message", "Caratula actualizada exitosamente"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        try {
-            songService.delete(id);
-            return ResponseEntity.ok(Map.of("message", "Canción eliminada exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
+        songService.delete(id);
+        return ResponseEntity.ok(Map.of("message", "Cancion eliminada exitosamente"));
     }
 }

@@ -1,7 +1,9 @@
 package com.xound.controller;
 
+import com.xound.dto.EventRequest;
 import com.xound.model.Event;
 import com.xound.service.EventService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -32,62 +34,39 @@ public class EventController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findById(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(eventService.findById(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Event> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.findById(id));
     }
 
     @GetMapping("/share/{code}")
-    public ResponseEntity<?> findByShareCode(@PathVariable String code) {
-        try {
-            return ResponseEntity.ok(eventService.findByShareCode(code));
-        } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Event> findByShareCode(@PathVariable String code) {
+        return ResponseEntity.ok(eventService.findByShareCode(code));
     }
 
     @PostMapping
-    public ResponseEntity<?> save(@RequestBody Event event, Authentication auth) {
-        try {
-            Long userId = (Long) auth.getCredentials();
-            event.setUserId(userId);
-            eventService.save(event);
-            return ResponseEntity.ok(Map.of("message", "Evento creado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> save(@Valid @RequestBody EventRequest request,
+                                                     Authentication auth) {
+        Long userId = (Long) auth.getCredentials();
+        eventService.save(request, userId);
+        return ResponseEntity.ok(Map.of("message", "Evento creado exitosamente"));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Event event) {
-        try {
-            eventService.update(id, event);
-            return ResponseEntity.ok(Map.of("message", "Evento actualizado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> update(@PathVariable Long id,
+                                                       @Valid @RequestBody EventRequest request) {
+        eventService.update(id, request);
+        return ResponseEntity.ok(Map.of("message", "Evento actualizado exitosamente"));
     }
 
     @PutMapping("/{id}/publish")
-    public ResponseEntity<?> publish(@PathVariable Long id) {
-        try {
-            eventService.publish(id);
-            return ResponseEntity.ok(Map.of("message", "Estado de publicación actualizado"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> publish(@PathVariable Long id) {
+        eventService.publish(id);
+        return ResponseEntity.ok(Map.of("message", "Estado de publicacion actualizado"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        try {
-            eventService.delete(id);
-            return ResponseEntity.ok(Map.of("message", "Evento eliminado exitosamente"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
+        eventService.delete(id);
+        return ResponseEntity.ok(Map.of("message", "Evento eliminado exitosamente"));
     }
 }

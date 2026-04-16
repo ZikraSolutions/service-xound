@@ -1,20 +1,25 @@
 package com.xound.service;
 
+import com.xound.dto.AuthResponse;
+import com.xound.dto.UserLoginRequest;
+import com.xound.dto.UserRegisterRequest;
+import com.xound.dto.UserResponse;
+import com.xound.exception.BadRequestException;
+import com.xound.exception.ConflictException;
+import com.xound.exception.NotFoundException;
+import com.xound.exception.UnauthorizedException;
 import com.xound.model.User;
 import com.xound.repository.RoleRepository;
 import com.xound.repository.UserRepository;
 import com.xound.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class UserService {
-
-    private static final String USERNAME_PATTERN = "^[a-zA-Z0-9]+$";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -29,72 +34,68 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
+    @Transactional(readOnly = true)
     public List<User> findAll() {
         return userRepository.findAll();
     }
 
-    public Map<String, Object> register(User user) {
-        if (user.getUsername() == null || !user.getUsername().matches(USERNAME_PATTERN)) {
-            throw new RuntimeException("El username solo puede contener letras y numeros, sin espacios ni caracteres especiales");
+    @Transactional
+    public AuthResponse register(UserRegisterRequest request) {
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new ConflictException("El username ya esta registrado");
         }
 
-        if (user.getPassword() == null || user.getPassword().isBlank()) {
-            throw new RuntimeException("La contraseña es obligatoria");
-        }
+        Long musicianRoleId = roleRepository.findByName("MUSICIAN")
+                .orElseThrow(() -> new NotFoundException("Rol MUSICIAN no encontrado"))
+                .getId();
 
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("El username ya esta registrado");
-        }
+        User user = new User();
+        user.setName(request.getName());
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoleId(musicianRoleId);
 
-        // Siempre asignar MUSICIAN al registrarse
-        roleRepository.findByName("MUSICIAN")
-                .ifPresent(role -> user.setRoleId(role.getId()));
-
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
 
-        User saved = userRepository.findByUsername(user.getUsername())
-                .orElseThrow(() -> new RuntimeException("Error al registrar usuario"));
+        User saved = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new BadRequestException("Error al registrar usuario"));
 
         String token = jwtUtil.generateToken(saved.getId(), saved.getUsername(), saved.getRoleName());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", saved);
-        return response;
+        return new AuthResponse(token, UserResponse.from(saved));
     }
 
+    @Transactional
     public User changeRole(Long userId, String roleName) {
         userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
         Long roleId = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Rol no valido: " + roleName))
+                .orElseThrow(() -> new BadRequestException("Rol no valido: " + roleName))
                 .getId();
 
         userRepository.updateRole(userId, roleId);
 
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Error al obtener usuario actualizado"));
+                .orElseThrow(() -> new NotFoundException("Error al obtener usuario actualizado"));
     }
 
-    public Map<String, Object> login(String username, String password) {
-        if (username == null || password == null) {
-            throw new RuntimeException("Credenciales invalidas");
-        }
+    @Transactional(readOnly = true)
+    public AuthResponse login(UserLoginRequest request) {
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new UnauthorizedException("Credenciales invalidas"));
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Credenciales invalidas"));
-
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Credenciales invalidas");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new UnauthorizedException("Credenciales invalidas");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRoleName());
+        return new AuthResponse(token, UserResponse.from(user));
+    }
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", user);
-        return response;
+    @Transactional
+    public void deleteUser(Long id) {
+        userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        userRepository.deleteById(id);
     }
 }

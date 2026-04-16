@@ -1,12 +1,18 @@
 package com.xound.controller;
 
+import com.xound.dto.AuthResponse;
+import com.xound.dto.ChangeRoleRequest;
+import com.xound.dto.UserLoginRequest;
+import com.xound.dto.UserRegisterRequest;
+import com.xound.dto.UserResponse;
 import com.xound.model.User;
 import com.xound.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,38 +25,27 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            Map<String, Object> response = userService.register(user);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody UserRegisterRequest request) {
+        return ResponseEntity.ok(userService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
-        try {
-            Map<String, Object> response = userService.login(
-                    credentials.get("username"), credentials.get("password"));
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody UserLoginRequest request) {
+        return ResponseEntity.ok(userService.login(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> findAll() {
-        return ResponseEntity.ok(userService.findAll());
+    public ResponseEntity<List<UserResponse>> findAll() {
+        List<UserResponse> users = userService.findAll().stream()
+                .map(UserResponse::from)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(users);
     }
 
     @PutMapping("/{id}/role")
-    public ResponseEntity<?> changeRole(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        try {
-            User updated = userService.changeRole(id, body.get("roleName"));
-            return ResponseEntity.ok(updated);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<UserResponse> changeRole(@PathVariable Long id,
+                                                    @Valid @RequestBody ChangeRoleRequest request) {
+        User updated = userService.changeRole(id, request.getRoleName());
+        return ResponseEntity.ok(UserResponse.from(updated));
     }
 }

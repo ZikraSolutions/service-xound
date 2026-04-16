@@ -15,6 +15,7 @@ public class FavoriteService {
         this.favoriteRepository = favoriteRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<Long> getFavoriteSongIds(Long userId) {
         return favoriteRepository.findSongIdsByUserId(userId);
     }
